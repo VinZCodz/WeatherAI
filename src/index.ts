@@ -1,11 +1,8 @@
 import OpenAI from "openai";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const openai = new OpenAI({
-    apiKey: process.env.GOOGLE_API_KEY as string,
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  apiKey: process.env.OPENAI_API_KEY as string,
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
 });
 
 /**
@@ -33,52 +30,49 @@ function getTemperature(location: string, unit: 'C' | 'F'): string | null {
       temperatureInCelsius = 30;
       break;
     case 'paris':
-        temperatureInCelsius = 22;
-        break;
+      temperatureInCelsius = 22;
+      break;
     default:
       return null;
   }
 
   if (unit === 'F') {
-    const temperatureInFahrenheit = (temperatureInCelsius! * 9/5) + 32;
+    const temperatureInFahrenheit = (temperatureInCelsius! * 9 / 5) + 32;
     return `${temperatureInFahrenheit.toFixed(1)}°F`;
   } else {
     return `${temperatureInCelsius}°C`;
   }
 };
 
-const tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "getTemperature",
-            "description": "Get the Temperature in a given location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state, e.g. Chicago, IL",
-                    },
-                    "unit": { "type": "string", "enum": ["C", "F"] },
-                },
-                "required": ["location"],
-            },
-        }
-    }
-];
-
-const messages = [
+const response = await openai.chat.completions.create({
+  model: "gemini-2.0-flash",
+  messages: [
     { role: "system", content: "You are a helpful assistant who understands human natural langagues." },
     {
-        role: "user",
-        content: "Whats the present/real time temprature at Bangalore in celsius?",
-    },
-];
-
-const response = await openai.chat.completions.create({
-    model: "Gemini 2.0 Flash",
-    messages: messages,
-    tools: tools,
-    tool_choice: "auto",
+      role: "user",
+      content: "Whats the present/real time temprature at Bangalore in celsius?",
+    }
+  ],
+  tools: [
+    {
+      "type": "function",
+      "function": {
+        "name": "getTemperature",
+        "description": "Get the Temperature in a given location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g. Chicago, IL",
+            },
+            "unit": { "type": "string", "enum": ["C", "F"] },
+          },
+          "required": ["location"],
+        },
+      }
+    }
+  ]
 });
+
+console.log("Response: ", response);
